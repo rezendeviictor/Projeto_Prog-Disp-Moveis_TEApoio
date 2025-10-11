@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:teapoio/controller/auth_controller.dart';
-import 'package:teapoio/main.dart'; 
+import 'package:teapoio/main.dart';
 import '../about_screen.dart';
 import '../chat/chat_screen.dart';
 import '../chat/child_chat_screen.dart';
@@ -44,7 +44,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 30),
-            GridView.count( 
+            GridView.count(
               crossAxisCount: 2,
               crossAxisSpacing: 20,
               mainAxisSpacing: 20,
@@ -59,7 +59,8 @@ class HomeScreen extends StatelessWidget {
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Sistema de Comunicação com PECs - em desenvolvimento'),
+                        content: Text(
+                            'Sistema de Comunicação com PECs - em desenvolvimento'),
                       ),
                     );
                   },
@@ -72,15 +73,17 @@ class HomeScreen extends StatelessWidget {
                     if (authController.userType == UserType.caregiver) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ChatScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const ChatScreen()),
                       );
                     } else if (authController.userType == UserType.tea) {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ChildChatScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const ChildChatScreen()),
                       );
                     } else {
-                       ScaffoldMessenger.of(context).showSnackBar(
+                      ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Tipo de usuário não definido!'),
                         ),
@@ -95,7 +98,8 @@ class HomeScreen extends StatelessWidget {
                   onTap: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Módulo de Aprendizagem em desenvolvimento'),
+                        content:
+                            Text('Módulo de Aprendizagem em desenvolvimento'),
                       ),
                     );
                   },
@@ -164,7 +168,8 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const SettingsScreen()),
                 );
               },
             ),
