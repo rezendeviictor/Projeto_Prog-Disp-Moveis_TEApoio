@@ -19,12 +19,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
-      final success = await _authController.login(
-        _emailController.text,
-        _passwordController.text,
+      // Chama o login e espera o resultado (null se sucesso, String se erro)
+      final erro = await _authController.login(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
       );
 
-      if (success && mounted) {
+      if (!mounted) return;
+
+      if (erro == null) {
+        // Sucesso
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const UserTypeSelectionScreen()),
@@ -33,15 +37,16 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Login realizado com sucesso!'),
-            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
           ),
         );
-      } else if (mounted) {
+      } else {
+        // Erro
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Erro no login. Verifique suas credenciais.'),
+          SnackBar(
+            content: Text(erro),
             backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           ),
         );
       }

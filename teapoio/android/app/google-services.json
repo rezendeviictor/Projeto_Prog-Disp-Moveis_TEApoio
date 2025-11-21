@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "28953992926",
+    "project_id": "teapoio-858bf",
+    "storage_bucket": "teapoio-858bf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:28953992926:android:aef95ff7c1ef21d8b3ac4f",
+        "android_client_info": {
+          "package_name": "com.example.teapoio"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYcffN-eg5Jg26L9CX041UtmZYbUWUyUk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

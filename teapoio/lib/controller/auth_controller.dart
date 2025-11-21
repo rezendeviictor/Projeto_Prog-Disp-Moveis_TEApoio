@@ -1,78 +1,140 @@
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum UserType { tea, caregiver }
 
 class AuthController with ChangeNotifier {
-  String? _loggedInUserEmail;
-  UserType? _userType; 
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  User? _user;
+  UserType? _userType;
   bool _isLoading = false;
 
-  String? get loggedInUserEmail => _loggedInUserEmail;
+  User? get user => _user;
   UserType? get userType => _userType;
   bool get isLoading => _isLoading;
-  bool get isLoggedIn => _loggedInUserEmail != null;
+  bool get isLoggedIn => _user != null;
+
+  AuthController() {
+    // Escuta alterações no estado da autenticação
+    _auth.authStateChanges().listen((User? user) {
+      _user = user;
+      notifyListeners();
+    });
+  }
 
   void setUserType(UserType type) {
     _userType = type;
     notifyListeners();
   }
 
-  Future<bool> login(String email, String password) async {
+  // RF001: Login
+  Future<String?> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (email.isNotEmpty && password.length >= 6) {
-      _loggedInUserEmail = email;
+    try {
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
       _isLoading = false;
       notifyListeners();
-      return true;
+      return null; // Sucesso (null significa sem erro)
+    } on FirebaseAuthException catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return _tratarErroFirebase(e.code);
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Erro desconhecido: $e';
     }
-
-    _isLoading = false;
-    notifyListeners();
-    return false;
   }
 
-  Future<bool> register(String name, String email, String phone, String password) async {
+  // RF002: Registro com dados adicionais no Firestore
+  Future<String?> register(String name, String email, String phone, String password) async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // 1. TENTATIVA CRÍTICA: Criar usuário na Autenticação
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-    if (email.isNotEmpty && password.length >= 6) {
+      // Se chegou aqui, o usuário JÁ EXISTE. O cadastro é um sucesso.
+      
+      // 2. TENTATIVA SECUNDÁRIA: Atualizar perfil e salvar no banco
+      try {
+        await userCredential.user?.updateDisplayName(name);
+
+        if (userCredential.user != null) {
+          await _firestore.collection('usuarios').doc(userCredential.user!.uid).set({
+            'nome': name,
+            'email': email,
+            'telefone': phone,
+            'data_cadastro': FieldValue.serverTimestamp(),
+          });
+        }
+      } catch (e) {
+        // Se der erro aqui (ex: internet oscilou ao salvar dados), apenas avisamos no console.
+        // Não impedimos o login, pois a conta já foi criada.
+        print("Aviso: Usuário criado, mas houve erro ao salvar dados extras: $e");
+      }
+
       _isLoading = false;
       notifyListeners();
-      return true;
+      return null; // Retorna NULL (Sucesso) pois a conta foi criada
+      
+    } on FirebaseAuthException catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return _tratarErroFirebase(e.code); // Erros reais de criação (email já existe, senha fraca)
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return 'Erro desconhecido ao criar conta: $e';
     }
-
-    _isLoading = false;
-    notifyListeners();
-    return false;
   }
 
-  Future<bool> recoverPassword(String email) async {
+  // Recuperação de Senha
+  Future<String?> recoverPassword(String email) async {
     _isLoading = true;
     notifyListeners();
 
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (email.contains('@')) {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
       _isLoading = false;
       notifyListeners();
-      return true;
+      return null;
+    } on FirebaseAuthException catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      return _tratarErroFirebase(e.code);
     }
-
-    _isLoading = false;
-    notifyListeners();
-    return false;
   }
 
-  void logout() {
-    _loggedInUserEmail = null;
+  Future<void> logout() async {
+    await _auth.signOut();
     _userType = null;
     notifyListeners();
+  }
+
+  String _tratarErroFirebase(String code) {
+    switch (code) {
+      case 'user-not-found':
+        return 'Usuário não encontrado.';
+      case 'wrong-password':
+        return 'Senha incorreta.';
+      case 'email-already-in-use':
+        return 'Este e-mail já está cadastrado.';
+      case 'invalid-email':
+        return 'E-mail inválido.';
+      case 'weak-password':
+        return 'A senha é muito fraca.';
+      default:
+        return 'Erro: $code';
+    }
   }
 }

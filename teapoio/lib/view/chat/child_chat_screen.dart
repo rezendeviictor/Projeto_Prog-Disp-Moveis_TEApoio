@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:teapoio/main.dart';
+import 'package:teapoio/model/message_model.dart';
+import 'package:teapoio/service/chat_service.dart';
+import 'package:teapoio/service/api_service.dart';
+import 'package:teapoio/model/pictograma_model.dart';
 
 class ChildChatScreen extends StatefulWidget {
   const ChildChatScreen({super.key});
@@ -8,10 +13,17 @@ class ChildChatScreen extends StatefulWidget {
 }
 
 class _ChildChatScreenState extends State<ChildChatScreen> {
-  final List<ChildChatMessage> _messages = [];
+  // SERVIÇOS (Isso é o que estava faltando)
+  final ChatService _chatService = ChatService();
+  final ApiService _apiService = ApiService();
+  
+  // ESTADO
   final List<PecItem> _selectedPecs = [];
+  final TextEditingController _searchController = TextEditingController();
+  List<PictogramaModel> _apiResults = [];
+  bool _isSearchingApi = false;
 
-  // CATEGORIAS DE PECs
+  // CATEGORIAS (Mantive as suas, e adicionei a Internet no final)
   final List<PecCategory> _categories = [
     PecCategory(
       'Alimentação',
@@ -73,6 +85,13 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
         PecItem('Bem', 'assets/images/pec_bem.png'),
       ],
     ),
+    // NOVA CATEGORIA PARA A API
+    PecCategory(
+      'Internet',
+      Icons.cloud_download,
+      Colors.purple,
+      [], // Lista vazia, será preenchida pela busca
+    ),
   ];
 
   void _addPecToMessage(PecItem pec) {
@@ -87,27 +106,24 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
     });
   }
 
-  void _sendMessage() {
+  // Enviar mensagem REAL para o Firebase
+  void _sendMessage() async {
     if (_selectedPecs.isEmpty) return;
 
-    setState(() {
-      _messages.add(ChildChatMessage(
-        pecs: List.from(_selectedPecs),
-        isSentByMe: true,
-        timestamp: DateTime.now(),
-      ));
-      _selectedPecs.clear();
-    });
+    // Transforma as PECs em texto para salvar no banco
+    String messageText = _selectedPecs.map((p) => p.text).join(" ");
 
-    // Simular resposta do cuidador
-    Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _messages.add(ChildChatMessage(
-          pecs: [PecItem('Entendido', 'assets/images/pec_entendido.png')],
-          isSentByMe: false,
-          timestamp: DateTime.now(),
-        ));
-      });
+    final authController = AppState.of(context).authController;
+    final userEmail = authController.loggedInUserEmail ?? 'Crianca';
+
+    await _chatService.sendMessage(
+      messageText,
+      userEmail,
+      false, // false = enviado pela criança
+    );
+
+    setState(() {
+      _selectedPecs.clear();
     });
   }
 
@@ -117,8 +133,28 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
     });
   }
 
+  // Função para buscar na API
+  void _searchApi() async {
+    String term = _searchController.text.trim();
+    if (term.isEmpty) return;
+
+    setState(() {
+      _isSearchingApi = true;
+    });
+
+    final results = await _apiService.buscarPictogramas(term);
+
+    setState(() {
+      _apiResults = results;
+      _isSearchingApi = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final authController = AppState.of(context).authController;
+    final currentUserEmail = authController.loggedInUserEmail;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Chat - Versão Criança'),
@@ -127,6 +163,7 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
       ),
       body: Column(
         children: [
+          // ÁREA DE CONSTRUÇÃO DA FRASE
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
@@ -138,7 +175,6 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
             ),
           ),
 
-          // MENSAGEM EM CONSTRUÇÃO
           if (_selectedPecs.isNotEmpty)
             Container(
               padding: const EdgeInsets.all(16),
@@ -160,30 +196,7 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
                       return Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          Container(
-                            width: 70,
-                            height: 70,
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey.shade300),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Image.asset(
-                              pec.imagePath,
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return const Icon(Icons.error, color: Colors.red);
-                              },
-                            ),
-                          ),
+                          _buildPecCard(pec, size: 70),
                           Positioned(
                             top: -12,
                             right: -12,
@@ -230,22 +243,38 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
               ),
             ),
 
-          // LISTA DE MENSAGENS
+          // LISTA DE MENSAGENS (Firebase Stream)
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              reverse: false,
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _buildMessageBubble(message);
+            child: StreamBuilder<List<MessageModel>>(
+              stream: _chatService.getMessagesStream(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Center(child: Text("Sem mensagens."));
+                
+                final messages = snapshot.data!;
+                // Inverte a lista para mostrar as mais recentes no final da lista
+                final reversedMessages = messages.reversed.toList();
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  reverse: true, // Começa de baixo para cima
+                  itemCount: reversedMessages.length,
+                  itemBuilder: (context, index) {
+                    final msg = reversedMessages[index];
+                    final isMe = msg.senderId == currentUserEmail;
+                    
+                    // Opcional: Filtrar mensagens irrelevantes
+                    if (!isMe && !msg.isCaregiver) return const SizedBox();
+
+                    return _buildMessageBubble(msg, isMe);
+                  },
+                );
               },
             ),
           ),
 
-          // CATEGORIAS DE PECs
+          // TABS DE CATEGORIAS + BUSCA API
           SizedBox(
-            height: 200,
+            height: 250,
             child: DefaultTabController(
               length: _categories.length,
               child: Column(
@@ -268,6 +297,10 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
                   Expanded(
                     child: TabBarView(
                       children: _categories.map((category) {
+                        // Se for a categoria Internet, mostra a busca
+                        if (category.name == 'Internet') {
+                          return _buildApiSearchTab();
+                        }
                         return _buildCategoryGrid(category);
                       }).toList(),
                     ),
@@ -278,6 +311,65 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  // Widgets Auxiliares
+
+  Widget _buildApiSearchTab() {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: const InputDecoration(
+                    labelText: 'Pesquisar na Internet (ex: Avião)',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  onSubmitted: (_) => _searchApi(),
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.arrow_forward),
+                onPressed: _searchApi,
+              )
+            ],
+          ),
+        ),
+        Expanded(
+          child: _isSearchingApi
+            ? const Center(child: CircularProgressIndicator())
+            : _apiResults.isEmpty
+              ? const Center(child: Text("Digite para buscar novas figuras"))
+              : GridView.builder(
+                  padding: const EdgeInsets.all(8),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                  ),
+                  itemCount: _apiResults.length,
+                  itemBuilder: (context, index) {
+                    final apiPec = _apiResults[index];
+                    // Converte resultado da API para PecItem
+                    final pecItem = PecItem(
+                      apiPec.texto, 
+                      apiPec.urlImagem, 
+                      isNetworkImage: true 
+                    );
+                    return InkWell(
+                      onTap: () => _addPecToMessage(pecItem),
+                      child: _buildPecCard(pecItem, size: 50),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 
@@ -293,71 +385,59 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
       itemCount: category.pecs.length,
       itemBuilder: (context, index) {
         final pec = category.pecs[index];
-        return _buildPecButton(pec, category.color);
+        return InkWell(
+          onTap: () => _addPecToMessage(pec),
+          child: _buildPecCard(pec, size: 50),
+        );
       },
     );
   }
 
-  Widget _buildPecButton(PecItem pec, Color categoryColor) {
+  Widget _buildPecCard(PecItem pec, {required double size}) {
     return Card(
       elevation: 2,
-      child: InkWell(
-        onTap: () => _addPecToMessage(pec),
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: categoryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Image.asset(
-                  pec.imagePath,
-                  width: 40,
-                  height: 40,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Center(
-                      child: Text(
-                        pec.text.substring(0, 2),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: categoryColor,
-                        ),
-                      ),
-                    );
-                  },
-                ),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
               ),
-              const SizedBox(height: 4),
-              Text(
-                pec.text,
-                style: const TextStyle(fontSize: 10),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-              ),
-            ],
-          ),
+              child: pec.isNetworkImage
+                  ? Image.network(pec.imagePath, fit: BoxFit.contain)
+                  : Image.asset(
+                      pec.imagePath,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => 
+                          const Icon(Icons.image_not_supported),
+                    ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              pec.text,
+              style: const TextStyle(fontSize: 10),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildMessageBubble(ChildChatMessage message) {
+  Widget _buildMessageBubble(MessageModel message, bool isMe) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
-        mainAxisAlignment: message.isSentByMe
-            ? MainAxisAlignment.end
-            : MainAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!message.isSentByMe)
+          if (!isMe)
             const Padding(
               padding: EdgeInsets.only(right: 8.0),
               child: CircleAvatar(
@@ -372,51 +452,27 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
             ),
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: message.isSentByMe
-                  ? const Color(0xFFB59DD9)
-                  : Colors.grey[200],
+              color: isMe ? const Color(0xFFB59DD9) : Colors.grey[200],
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // PECs DA MENSAGEM
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: message.pecs.map((pec) {
-                    return Container(
-                      width: 45,
-                      height: 45,
-                      padding: const EdgeInsets.all(2),
-                      decoration: BoxDecoration(
-                        color: message.isSentByMe
-                            ? Colors.white.withOpacity(0.25)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey.shade300)
-                      ),
-                      child: Image.asset(
-                        pec.imagePath,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                           return Tooltip(
-                            message: pec.text,
-                            child: const Icon(Icons.image_not_supported, size: 20),
-                          );
-                        },
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 8),
                 Text(
-                  '${message.timestamp.hour}:${message.timestamp.minute.toString().padLeft(2, '0')}',
+                  message.text.toUpperCase(),
+                  style: TextStyle(
+                    color: isMe ? Colors.white : Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  // Formata hora simples
+                  '${message.timestamp.toDate().hour}:${message.timestamp.toDate().minute.toString().padLeft(2, '0')}',
                   style: TextStyle(
                     fontSize: 10,
-                    color: message.isSentByMe
-                        ? Colors.white70
-                        : Colors.grey[600],
+                    color: isMe ? Colors.white70 : Colors.grey[600],
                   ),
                 ),
               ],
@@ -428,18 +484,7 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
   }
 }
 
-class ChildChatMessage {
-  final List<PecItem> pecs;
-  final bool isSentByMe;
-  final DateTime timestamp;
-
-  ChildChatMessage({
-    required this.pecs,
-    required this.isSentByMe,
-    required this.timestamp,
-  });
-}
-
+// CLASSES AUXILIARES ATUALIZADAS
 class PecCategory {
   final String name;
   final IconData icon;
@@ -452,6 +497,7 @@ class PecCategory {
 class PecItem {
   final String text;
   final String imagePath;
+  final bool isNetworkImage; // Novo campo essencial
 
-  PecItem(this.text, this.imagePath);
+  PecItem(this.text, this.imagePath, {this.isNetworkImage = false});
 }

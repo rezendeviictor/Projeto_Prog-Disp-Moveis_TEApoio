@@ -1,9 +1,19 @@
 import 'package:device_preview/device_preview.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart'; // 1. Importar o Core
 import 'controller/auth_controller.dart';
 import 'view/auth/login_screen.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  // 2. Garantir que os widgets do Flutter estejam prontos antes de iniciar o Firebase
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 3. Inicializar o Firebase (sem opções, pois você já tem o google-services.json)
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
   runApp(
     DevicePreview(
       enabled: true,
@@ -12,7 +22,7 @@ void main() {
   );
 }
 
-// PROVIDER GLOBAL PARA OS CONTROLLERS
+// ... O restante do arquivo continua igual ...
 class AppState extends InheritedWidget {
   final AuthController authController;
 
@@ -33,7 +43,6 @@ class AppState extends InheritedWidget {
     return true;
   }
 }
-
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key});

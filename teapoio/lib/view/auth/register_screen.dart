@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import '../../controller/auth_controller.dart'; 
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -9,6 +10,9 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  // 1. Instância do Controller
+  final AuthController _authController = AuthController();
+
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
@@ -16,7 +20,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  void _register() {
+  // 2. Método de Registro Atualizado
+  void _register() async {
     if (_formKey.currentState!.validate()) {
       // Verificar se as senhas coincidem
       if (_passwordController.text != _confirmPasswordController.text) {
@@ -29,22 +34,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
-      // Cadastro bem-sucedido
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cadastro realizado com sucesso!'),
-          backgroundColor: Colors.green,
-        ),
+      // Chama o método de registro do Controller (que vai pro Firebase)
+      final erro = await _authController.register(
+        _nameController.text.trim(),
+        _emailController.text.trim(),
+        _phoneController.text.trim(),
+        _passwordController.text.trim(),
       );
 
-      // Navegar de volta para o login
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
+      if (!mounted) return;
+
+      if (erro == null) {
+        // Sucesso
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cadastro realizado com sucesso!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navegar de volta para o login
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      } else {
+        // Erro
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(erro),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
+  // Validadores
   String? _validateName(String? value) {
     if (value == null || value.isEmpty) {
       return 'Por favor, digite seu nome completo';
@@ -201,27 +227,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 30),
 
-                // BOTÃO DE CADASTRAR
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _register,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFB59DD9),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                // 3. BOTÃO DE CADASTRAR (Com Loading Reativo)
+                // Usamos ListenableBuilder para reconstruir o botão quando _isLoading mudar
+                ListenableBuilder(
+                  listenable: _authController,
+                  builder: (context, child) {
+                    return SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        // Se estiver carregando, desabilita o clique
+                        onPressed: _authController.isLoading ? null : _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFB59DD9),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: _authController.isLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : const Text(
+                                'Cadastrar',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                       ),
-                    ),
-                    child: const Text(
-                      'Cadastrar',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 20),
 
