@@ -6,7 +6,6 @@ import 'package:teapoio/service/user_service.dart';
 class ManagePecsScreen extends StatelessWidget {
   const ManagePecsScreen({super.key});
 
-  // Diálogo para EDITAR
   void _showEditDialog(BuildContext context, String pecId, String currentText) {
     final controller = TextEditingController(text: currentText);
     final userService = UserService();

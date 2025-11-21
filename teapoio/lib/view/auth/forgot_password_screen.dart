@@ -15,13 +15,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   void _recover() async {
     if (_formKey.currentState!.validate()) {
-      // Chama o método do controller que já configuramos
+
       final erro = await _authController.recoverPassword(_emailController.text.trim());
 
       if (!mounted) return;
 
       if (erro == null) {
-        // SUCESSO
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('E-mail de recuperação enviado! Verifique sua caixa de entrada (e spam).'),
@@ -30,7 +30,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
         );
         
-        // Volta para o login
         Navigator.pop(context);
       } else {
         // ERRO
@@ -92,7 +91,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 30),
                 
-                // CAMPO DE EMAIL
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -105,7 +103,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 const SizedBox(height: 30),
                 
-                // BOTÃO ENVIAR (Com Loading)
                 ListenableBuilder(
                   listenable: _authController,
                   builder: (context, child) {

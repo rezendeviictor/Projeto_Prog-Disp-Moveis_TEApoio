@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:teapoio/controller/auth_controller.dart'; // Import do Enum UserType
-import 'package:teapoio/main.dart'; // Import para acessar o AppState
+import 'package:teapoio/controller/auth_controller.dart'; 
+import 'package:teapoio/main.dart';
 import 'package:teapoio/view/settings/edit_profile_screen.dart';
 import 'package:teapoio/view/settings/manage_pecs_screen.dart';
 
@@ -12,14 +12,12 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  // Estados para os controles
   bool _isPecReaderEnabled = true;
   double _volumeLevel = 0.5;
   bool _isChildModeEnabled = false;
 
   @override
   Widget build(BuildContext context) {
-    // 1. Recuperar o tipo de usuário logado
     final authController = AppState.of(context).authController;
     final isCaregiver = authController.userType == UserType.caregiver;
 
@@ -70,7 +68,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // ================= SEÇÃO: SISTEMA =================
           _buildSectionHeader('Sistema'),
 
-          // 1. Leitor de PECs (Voz)
           SwitchListTile(
             secondary: const Icon(Icons.record_voice_over, color: Color(0xFFB59DD9)),
             title: const Text('Leitor de PECs'),
@@ -97,7 +94,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          // 3. Modo Criança (APENAS SE FOR CUIDADOR)
           if (isCaregiver) 
             SwitchListTile(
               secondary: const Icon(Icons.child_care, color: Color(0xFFB59DD9)),
@@ -113,7 +109,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Modo Criança ativado!')),
                   );
-                  // Aqui você poderia redirecionar para a Home da Criança se quisesse
                 }
               },
             ),

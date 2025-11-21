@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class MessageModel {
   final String? id;
   final String text;
-  final String senderId; // ID de quem enviou (Email ou UID)
-  final bool isCaregiver; // Para saber se foi o Cuidador ou a Criança
+  final String senderId; 
+  final bool isCaregiver; 
   final Timestamp timestamp;
 
   MessageModel({
@@ -15,7 +15,7 @@ class MessageModel {
     required this.timestamp,
   });
 
-  // Converte do Firestore para o Objeto Dart
+
   factory MessageModel.fromMap(Map<String, dynamic> map, String docId) {
     return MessageModel(
       id: docId,
@@ -26,7 +26,7 @@ class MessageModel {
     );
   }
 
-  // Converte do Objeto Dart para o Firestore
+
   Map<String, dynamic> toMap() {
     return {
       'texto': text,

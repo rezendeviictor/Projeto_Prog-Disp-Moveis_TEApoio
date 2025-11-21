@@ -5,10 +5,7 @@ class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // ... (Mantenha os métodos updateProfile e updatePec iguais) ...
-
   Future<void> updateProfile(String newName, String newPhone) async {
-    // ... (Código anterior) ...
     final user = _auth.currentUser;
     if (user == null) return;
     try {
@@ -24,7 +21,6 @@ class UserService {
   }
 
   Future<void> updatePec(String pecId, String newText) async {
-    // ... (Código anterior) ...
     final user = _auth.currentUser;
     if (user == null) return;
     try {
@@ -39,7 +35,6 @@ class UserService {
     }
   }
 
-  // --- NOVO MÉTODO: EXCLUIR PEC ---
   Future<void> deletePec(String pecId) async {
     final user = _auth.currentUser;
     if (user == null) return;

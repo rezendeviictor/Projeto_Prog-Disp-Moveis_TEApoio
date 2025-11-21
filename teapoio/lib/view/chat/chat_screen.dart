@@ -24,7 +24,6 @@ class _ChatScreenState extends State<ChatScreen> {
     
     _textController.clear();
     
-    // Simular resposta automática
     Future.delayed(const Duration(seconds: 1), () {
       setState(() {
         _messages.add(ChatMessage(
@@ -43,11 +42,9 @@ class _ChatScreenState extends State<ChatScreen> {
         title: const Text('Chat - Versão Cuidador'),
         backgroundColor: const Color(0xFFB59DD9),
         foregroundColor: Colors.white,
-        // O botão de troca foi removido daqui
       ),
       body: Column(
         children: [
-          // CABEÇALHO INFORMATIVO
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(12),
@@ -59,7 +56,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           
-          // LISTA DE MENSAGENS
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -72,7 +68,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           
-          // ÁREA DE DIGITAÇÃO
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -112,7 +107,6 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 
-                // BOTÃO ENVIAR
                 IconButton(
                   icon: const Icon(Icons.send),
                   color: const Color(0xFFB59DD9),

@@ -4,12 +4,8 @@ import '../model/message_model.dart';
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Referência para a coleção de mensagens
-  // Obs: Em um app real, usaríamos subcoleções por par de usuários (chatId), 
-  // mas para o trabalho acadêmico, um chat global ou filtrado resolve.
   CollectionReference get _messagesRef => _firestore.collection('mensagens');
 
-  // RF003: Inserir Mensagem
   Future<void> sendMessage(String text, String userId, bool isCaregiver) async {
     try {
       final message = MessageModel(
@@ -26,10 +22,9 @@ class ChatService {
     }
   }
 
-  // RF005: Recuperar Dados em Tempo Real (Stream)
   Stream<List<MessageModel>> getMessagesStream() {
     return _messagesRef
-        .orderBy('timestamp', descending: false) // Ordenar por hora
+        .orderBy('timestamp', descending: false) 
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {

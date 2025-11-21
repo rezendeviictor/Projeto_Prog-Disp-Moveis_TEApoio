@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
 import 'package:teapoio/view/auth/user_type_selection_screen.dart';
-import '../../controller/auth_controller.dart'; // ← IMPORT DO CONTROLLER
+import '../../controller/auth_controller.dart'; 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,11 +15,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final AuthController _authController = AuthController(); // ← INSTÂNCIA DO CONTROLLER
+  final AuthController _authController = AuthController(); 
 
   void _login() async {
     if (_formKey.currentState!.validate()) {
-      // Chama o login e espera o resultado (null se sucesso, String se erro)
       final erro = await _authController.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
@@ -28,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (erro == null) {
-        // Sucesso
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const UserTypeSelectionScreen()),
@@ -41,7 +39,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
       } else {
-        // Erro
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(erro),
@@ -88,7 +85,6 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // LOGO DO TEApoio
                 Image.asset(
                   'assets/images/Logo.png',
                   width: 150,
@@ -115,7 +111,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 40),
                 
-                // BOTÕES DE LOGIN COM GOOGLE E APPLE
                 Row(
                   children: [
                     Expanded(

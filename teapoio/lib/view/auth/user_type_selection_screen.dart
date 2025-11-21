@@ -15,7 +15,6 @@ class _UserTypeSelectionScreenState extends State<UserTypeSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Acesse o AuthController
     final authController = AppState.of(context).authController;
 
     return Scaffold(

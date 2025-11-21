@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:teapoio/main.dart';
 import 'package:teapoio/model/message_model.dart';
 import 'package:teapoio/service/chat_service.dart';
-import 'package:teapoio/view/pec/add_pec_screen.dart'; // Import da nova tela
+import 'package:teapoio/view/pec/add_pec_screen.dart'; 
 
 class ChildChatScreen extends StatefulWidget {
   const ChildChatScreen({super.key});
@@ -16,7 +16,6 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
   final ChatService _chatService = ChatService();
   final List<PecItem> _selectedPecs = [];
   
-  // Categorias fixas para Tabs (usaremos Stream para popular o conteúdo)
   final List<String> _categoryNames = [
     'Geral', 'Alimentação', 'Atividades', 'Emoções', 'Saúde', 'Lugares', 'Pessoas'
   ];
@@ -70,13 +69,10 @@ class _ChildChatScreenState extends State<ChildChatScreen> {
       ),
       body: Column(
         children: [
-          // 1. ÁREA DE CONSTRUÇÃO
           _buildMessageConstructionArea(),
 
-          // 2. HISTÓRICO (Stream Mensagens)
           Expanded(flex: 2, child: _buildChatHistory(user?.email)),
 
-          // 3. PECS DO USUÁRIO (Stream Firestore - RF005)
           SizedBox(
             height: 250,
             child: DefaultTabController(

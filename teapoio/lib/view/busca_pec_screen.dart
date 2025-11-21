@@ -13,7 +13,6 @@ class _BuscaPecScreenState extends State<BuscaPecScreen> {
   final ApiService _apiService = ApiService();
   final TextEditingController _searchController = TextEditingController();
   
-  // Future para o FutureBuilder
   Future<List<PictogramaModel>>? _futurePictogramas;
 
   void _realizarBusca() {
@@ -56,7 +55,6 @@ class _BuscaPecScreenState extends State<BuscaPecScreen> {
             ),
             const SizedBox(height: 20),
             
-            // Exibição dos Resultados com FutureBuilder (Padrão do Professor)
             Expanded(
               child: FutureBuilder<List<PictogramaModel>>(
                 future: _futurePictogramas,

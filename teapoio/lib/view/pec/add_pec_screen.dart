@@ -18,9 +18,8 @@ class _AddPecScreenState extends State<AddPecScreen> {
 
   List<PictogramaModel> _apiResults = [];
   bool _isLoading = false;
-  String _selectedCategory = 'Geral'; // Categoria padrão
+  String _selectedCategory = 'Geral';
 
-  // Lista de categorias disponíveis para organizar
   final List<String> _categories = [
     'Geral',
     'Alimentação',
@@ -57,7 +56,6 @@ class _AddPecScreenState extends State<AddPecScreen> {
       return;
     }
 
-    // RF003: Inserção de Dados (Salva na subcoleção do usuário)
     try {
       await _firestore
           .collection('usuarios')

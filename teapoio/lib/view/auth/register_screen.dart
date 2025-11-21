@@ -21,7 +21,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _register() async {
     if (_formKey.currentState!.validate()) {
-      // Validação de senhas iguais
       if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -43,7 +42,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (erro == null) {
-        // SUCESSO: Ficha e Login criados
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Cadastro realizado com sucesso! Faça login.'),
@@ -52,13 +50,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         );
 
-        // Vai para a tela de Login
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       } else {
-        // ERRO
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(erro),
@@ -69,7 +65,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  // Validadores
   String? _validateName(String? value) {
     if (value == null || value.isEmpty) return 'Digite seu nome completo';
     if (value.length < 3) return 'Nome muito curto';
