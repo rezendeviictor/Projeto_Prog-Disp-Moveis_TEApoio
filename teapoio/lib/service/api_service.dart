@@ -9,7 +9,7 @@ class ApiService {
     if (termo.isEmpty) return [];
     
     // Endpoint de busca "best match" em português
-    final url = Uri.parse('https://api.arasaac.org/api/pictograms/pt/best/$termo');
+    final url = Uri.parse('https://api.arasaac.org/api/pictograms/pt/search/$termo');
     
     try {
       final response = await http.get(url);
