@@ -18,7 +18,6 @@ class AuthController with ChangeNotifier {
   bool get isLoggedIn => _user != null;
 
   AuthController() {
-    // Escuta alterações no estado da autenticação
     _auth.authStateChanges().listen((User? user) {
       _user = user;
       notifyListeners();
@@ -30,7 +29,7 @@ class AuthController with ChangeNotifier {
     notifyListeners();
   }
 
-  // RF001: Login
+  // LOGIN (RF001)
   Future<String?> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
@@ -39,7 +38,7 @@ class AuthController with ChangeNotifier {
       await _auth.signInWithEmailAndPassword(email: email, password: password);
       _isLoading = false;
       notifyListeners();
-      return null; // Sucesso (null significa sem erro)
+      return null; // Sucesso
     } on FirebaseAuthException catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -51,24 +50,29 @@ class AuthController with ChangeNotifier {
     }
   }
 
-  // RF002: Registro com dados adicionais no Firestore
+  // REGISTRO BLINDADO (RF002)
+  // Cria Login (Auth) + Cria Ficha (Firestore)
   Future<String?> register(String name, String email, String phone, String password) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      // 1. Criar usuário na Auth
+      // 1. Criar usuário na Autenticação
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // 2. Atualizar Display Name
-      await userCredential.user?.updateDisplayName(name);
-
-      // 3. Salvar dados extras no Firestore (Coleção 'usuarios')
+      // 2. Preparar os dados da ficha
       if (userCredential.user != null) {
-        await _firestore.collection('usuarios').doc(userCredential.user!.uid).set({
+        final uid = userCredential.user!.uid;
+        
+        // Atualiza o nome de exibição no Auth (para facilitar boas-vindas)
+        await userCredential.user?.updateDisplayName(name);
+
+        // 3. CRIAÇÃO DA FICHA NO FIRESTORE (Obrigatório)
+        // Usamos .set() para garantir que o documento seja criado do zero
+        await _firestore.collection('usuarios').doc(uid).set({
           'nome': name,
           'email': email,
           'telefone': phone,
@@ -76,9 +80,13 @@ class AuthController with ChangeNotifier {
         });
       }
 
+      // 4. Deslogar para forçar o login manual (conforme seu pedido)
+      await _auth.signOut();
+
       _isLoading = false;
       notifyListeners();
-      return null; // Sucesso
+      return null; // Sucesso total!
+      
     } on FirebaseAuthException catch (e) {
       _isLoading = false;
       notifyListeners();
@@ -86,11 +94,12 @@ class AuthController with ChangeNotifier {
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      return 'Erro ao cadastrar: $e';
+      // Se der erro de banco mas o usuário foi criado, o UserService (que fizemos antes)
+      // vai corrigir depois. Mas aqui tentamos garantir na hora.
+      return 'Erro ao finalizar cadastro: $e';
     }
   }
 
-  // Recuperação de Senha
   Future<String?> recoverPassword(String email) async {
     _isLoading = true;
     notifyListeners();

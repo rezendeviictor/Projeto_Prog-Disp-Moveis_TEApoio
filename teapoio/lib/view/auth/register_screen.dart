@@ -10,7 +10,6 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // 1. Instância do Controller
   final AuthController _authController = AuthController();
 
   final TextEditingController _nameController = TextEditingController();
@@ -20,10 +19,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _confirmPasswordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
-  // 2. Método de Registro Atualizado
   void _register() async {
     if (_formKey.currentState!.validate()) {
-      // Verificar se as senhas coincidem
+      // Validação de senhas iguais
       if (_passwordController.text != _confirmPasswordController.text) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -34,7 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
-      // Chama o método de registro do Controller (que vai pro Firebase)
+      // Chama o cadastro blindado
       final erro = await _authController.register(
         _nameController.text.trim(),
         _emailController.text.trim(),
@@ -45,21 +43,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       if (erro == null) {
-        // Sucesso
+        // SUCESSO: Ficha e Login criados
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Cadastro realizado com sucesso!'),
+            content: Text('Cadastro realizado com sucesso! Faça login.'),
             backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
           ),
         );
 
-        // Navegar de volta para o login
+        // Vai para a tela de Login
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       } else {
-        // Erro
+        // ERRO
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(erro),
@@ -72,52 +71,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // Validadores
   String? _validateName(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Por favor, digite seu nome completo';
-    }
-    if (value.length < 3) {
-      return 'Nome deve ter pelo menos 3 caracteres';
-    }
+    if (value == null || value.isEmpty) return 'Digite seu nome completo';
+    if (value.length < 3) return 'Nome muito curto';
     return null;
   }
 
   String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Por favor, digite seu e-mail';
-    }
-    if (!value.contains('@')) {
-      return 'E-mail inválido';
-    }
+    if (value == null || value.isEmpty) return 'Digite seu e-mail';
+    if (!value.contains('@')) return 'E-mail inválido';
     return null;
   }
 
   String? _validatePhone(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Por favor, digite seu telefone';
-    }
-    if (value.length < 10) {
-      return 'Telefone inválido';
-    }
+    if (value == null || value.isEmpty) return 'Digite seu telefone';
     return null;
   }
 
   String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Por favor, digite sua senha';
-    }
-    if (value.length < 6) {
-      return 'Senha deve ter pelo menos 6 caracteres';
-    }
+    if (value == null || value.isEmpty) return 'Digite sua senha';
+    if (value.length < 6) return 'Senha deve ter pelo menos 6 caracteres';
     return null;
   }
 
   String? _validateConfirmPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Por favor, confirme sua senha';
-    }
-    if (value != _passwordController.text) {
-      return 'As senhas não coincidem';
-    }
+    if (value == null || value.isEmpty) return 'Confirme sua senha';
+    if (value != _passwordController.text) return 'As senhas não coincidem';
     return null;
   }
 
@@ -136,7 +114,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             key: _formKey,
             child: Column(
               children: [
-                // LOGO
                 Image.asset(
                   'assets/images/Logo.png',
                   width: 120,
@@ -144,91 +121,51 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 10),
-                
                 const Text(
                   'Criar Nova Conta',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 5),
-                const Text(
-                  'Preencha os dados abaixo',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color.fromARGB(255, 105, 105, 105),
-                  ),
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 30),
 
-                // CAMPO NOME COMPLETO
                 TextFormField(
                   controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome Completo',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person),
-                  ),
+                  decoration: const InputDecoration(labelText: 'Nome Completo', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
                   validator: _validateName,
                 ),
                 const SizedBox(height: 20),
 
-                // CAMPO E-MAIL
                 TextFormField(
                   controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'E-mail',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
-                  ),
+                  decoration: const InputDecoration(labelText: 'E-mail', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
                   keyboardType: TextInputType.emailAddress,
                   validator: _validateEmail,
                 ),
                 const SizedBox(height: 20),
 
-                // CAMPO TELEFONE
                 TextFormField(
                   controller: _phoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Telefone',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.phone),
-                  ),
+                  decoration: const InputDecoration(labelText: 'Telefone', border: OutlineInputBorder(), prefixIcon: Icon(Icons.phone)),
                   keyboardType: TextInputType.phone,
                   validator: _validatePhone,
                 ),
                 const SizedBox(height: 20),
 
-                // CAMPO SENHA
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Senha',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
-                  ),
+                  decoration: const InputDecoration(labelText: 'Senha', border: OutlineInputBorder(), prefixIcon: Icon(Icons.lock)),
                   validator: _validatePassword,
                 ),
                 const SizedBox(height: 20),
 
-                // CAMPO CONFIRMAR SENHA
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Confirmar Senha',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock_outline),
-                  ),
+                  decoration: const InputDecoration(labelText: 'Confirmar Senha', border: OutlineInputBorder(), prefixIcon: Icon(Icons.lock_outline)),
                   validator: _validateConfirmPassword,
                 ),
                 const SizedBox(height: 30),
 
-                // 3. BOTÃO DE CADASTRAR (Com Loading Reativo)
-                // Usamos ListenableBuilder para reconstruir o botão quando _isLoading mudar
                 ListenableBuilder(
                   listenable: _authController,
                   builder: (context, child) {
@@ -236,53 +173,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        // Se estiver carregando, desabilita o clique
                         onPressed: _authController.isLoading ? null : _register,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFB59DD9),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: _authController.isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              )
-                            : const Text(
-                                'Cadastrar',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white))
+                            : const Text('Cadastrar', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
                       ),
                     );
                   },
                 ),
                 const SizedBox(height: 20),
-
-                // LINK PARA VOLTAR AO LOGIN
                 TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const LoginScreen()),
-                    );
-                  },
-                  child: const Text(
-                    'Já tem uma conta? Faça login',
-                    style: TextStyle(
-                      color: Color(0xFFB59DD9),
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen())),
+                  child: const Text('Já tem uma conta? Faça login', style: TextStyle(color: Color(0xFFB59DD9), fontWeight: FontWeight.bold)),
                 ),
               ],
             ),
