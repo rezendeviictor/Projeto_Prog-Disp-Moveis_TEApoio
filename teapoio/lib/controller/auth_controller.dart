@@ -57,44 +57,36 @@ class AuthController with ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. TENTATIVA CRÍTICA: Criar usuário na Autenticação
+      // 1. Criar usuário na Auth
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Se chegou aqui, o usuário JÁ EXISTE. O cadastro é um sucesso.
-      
-      // 2. TENTATIVA SECUNDÁRIA: Atualizar perfil e salvar no banco
-      try {
-        await userCredential.user?.updateDisplayName(name);
+      // 2. Atualizar Display Name
+      await userCredential.user?.updateDisplayName(name);
 
-        if (userCredential.user != null) {
-          await _firestore.collection('usuarios').doc(userCredential.user!.uid).set({
-            'nome': name,
-            'email': email,
-            'telefone': phone,
-            'data_cadastro': FieldValue.serverTimestamp(),
-          });
-        }
-      } catch (e) {
-        // Se der erro aqui (ex: internet oscilou ao salvar dados), apenas avisamos no console.
-        // Não impedimos o login, pois a conta já foi criada.
-        print("Aviso: Usuário criado, mas houve erro ao salvar dados extras: $e");
+      // 3. Salvar dados extras no Firestore (Coleção 'usuarios')
+      if (userCredential.user != null) {
+        await _firestore.collection('usuarios').doc(userCredential.user!.uid).set({
+          'nome': name,
+          'email': email,
+          'telefone': phone,
+          'data_cadastro': FieldValue.serverTimestamp(),
+        });
       }
 
       _isLoading = false;
       notifyListeners();
-      return null; // Retorna NULL (Sucesso) pois a conta foi criada
-      
+      return null; // Sucesso
     } on FirebaseAuthException catch (e) {
       _isLoading = false;
       notifyListeners();
-      return _tratarErroFirebase(e.code); // Erros reais de criação (email já existe, senha fraca)
+      return _tratarErroFirebase(e.code);
     } catch (e) {
       _isLoading = false;
       notifyListeners();
-      return 'Erro desconhecido ao criar conta: $e';
+      return 'Erro ao cadastrar: $e';
     }
   }
 
